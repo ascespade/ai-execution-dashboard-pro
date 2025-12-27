@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuthStore, useUIStore } from '@/store';
 import { Input, Badge, Button } from '@/components/ui';
+import { ConnectionStatusIndicator } from '@/components/ui/ConnectionStatusIndicator';
 import { formatRelativeTime } from '@/lib/utils';
 
 export const Header: React.FC = () => {
@@ -76,6 +77,9 @@ export const Header: React.FC = () => {
 
       {/* Actions */}
       <div className="flex items-center gap-2 ml-4">
+        {/* Connection Status Indicator */}
+        <ConnectionStatusIndicator />
+
         {/* Theme Toggle */}
         <button
           onClick={toggleDarkMode}

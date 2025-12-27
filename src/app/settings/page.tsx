@@ -1,31 +1,134 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardContent, Button, Input, Toggle, Badge, Modal, ConfirmModal, Select } from '@/components/ui';
-import { User, Bell, Shield, Key, CreditCard, Check, Copy, Plus, Trash2, Settings } from 'lucide-react';
+import { User, Bell, Shield, Key, CreditCard, Check, Copy, Plus, Trash2, Settings, Wifi, WifiOff, AlertTriangle, RefreshCw, Globe, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AI_PROVIDERS } from '@/lib/constants';
+import { useConfigStore, validateBaseUrl, validateApiKey, selectConnectionStatus } from '@/platform/stores/configStore';
+import { useTestConnection, getErrorKind, getErrorAction } from '@/platform/adapter/hooks/usePlatform';
+import { formatRelativeTime } from '@/lib/utils';
+import { ConnectionStatusIndicator } from '@/components/ui/ConnectionStatusIndicator';
 
-type SettingsTab = 'profile' | 'notifications' | 'api-keys' | 'security' | 'billing';
+type SettingsTab = 'profile' | 'notifications' | 'platform' | 'api-keys' | 'security' | 'billing';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('platform');
+  
+  // Platform configuration state (local form state)
+  const [inputBaseUrl, setInputBaseUrl] = useState('');
+  const [inputApiKey, setInputApiKey] = useState('');
+  const [baseUrlError, setBaseUrlError] = useState('');
+  const [apiKeyError, setApiKeyError] = useState('');
+  
+  // API Keys modal state
   const [showAddKeyModal, setShowAddKeyModal] = useState(false);
   const [showDeleteKeyModal, setShowDeleteKeyModal] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-
+  
+  // API Keys list (mock data for external provider keys)
+  const [apiKeys] = useState([
+    {
+      id: '1',
+      name: 'Production OpenAI',
+      provider: 'openai',
+      created: 'Jan 15, 2025',
+      lastUsed: '2 hours ago'
+    },
+    {
+      id: '2',
+      name: 'Dev Anthropic',
+      provider: 'anthropic',
+      created: 'Feb 3, 2025',
+      lastUsed: '1 day ago'
+    }
+  ]);
+  
+  // Store hooks
+  const { 
+    baseUrl: storedBaseUrl, 
+    apiKey: storedApiKey,
+    isConnecting,
+    lastConnectionStatus,
+    lastConnectionTime,
+    lastLatency,
+    setBaseUrl: updateStoredBaseUrl, 
+    setApiKey: updateStoredApiKey,
+    setConnecting,
+    setConnectionStatus,
+    isConfigured
+  } = useConfigStore();
+  
+  const connectionStatus = useConfigStore(selectConnectionStatus);
+  const testConnectionMutation = useTestConnection();
+  
+  // Load stored values on mount
+  useEffect(() => {
+    if (storedBaseUrl) setInputBaseUrl(storedBaseUrl);
+    if (storedApiKey) setInputApiKey(storedApiKey);
+  }, [storedBaseUrl, storedApiKey]);
+  
+  const handleBaseUrlChange = (value: string) => {
+    setInputBaseUrl(value);
+    setBaseUrlError('');
+  };
+  
+  const handleApiKeyChange = (value: string) => {
+    setInputApiKey(value);
+    setApiKeyError('');
+  };
+  
+  const handleTestConnection = async () => {
+    // Validate inputs
+    if (!inputBaseUrl) {
+      setBaseUrlError('Base URL is required');
+      return;
+    }
+    if (!validateBaseUrl(inputBaseUrl)) {
+      setBaseUrlError('Please enter a valid URL (http:// or https://)');
+      return;
+    }
+    if (!inputApiKey) {
+      setApiKeyError('API key is required');
+      return;
+    }
+    if (!validateApiKey(inputApiKey)) {
+      setApiKeyError('API key must be at least 8 characters');
+      return;
+    }
+    
+    // Save configuration to store
+    updateStoredBaseUrl(inputBaseUrl);
+    updateStoredApiKey(inputApiKey);
+    setConnecting(true);
+    
+    try {
+      const result = await testConnectionMutation.mutateAsync();
+      if (result.success) {
+        setConnectionStatus('success', result.latency);
+      } else {
+        setConnectionStatus('failed');
+      }
+    } catch (error) {
+      setConnectionStatus('failed');
+    }
+  };
+  
+  const handleSaveConfiguration = () => {
+    if (!baseUrlError && !apiKeyError && inputBaseUrl && inputApiKey) {
+      updateStoredBaseUrl(inputBaseUrl);
+      updateStoredApiKey(inputApiKey);
+    }
+  };
+  
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'platform', label: 'Platform', icon: Globe },
     { id: 'api-keys', label: 'API Keys', icon: Key },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'billing', label: 'Billing', icon: CreditCard },
-  ];
-
-  const apiKeys = [
-    { id: '1', provider: 'openai', name: 'OpenAI Production', created: '2024-01-15', lastUsed: '2 hours ago' },
-    { id: '2', provider: 'anthropic', name: 'Claude Development', created: '2024-02-20', lastUsed: '1 day ago' },
   ];
 
   return (
@@ -139,6 +242,146 @@ export default function SettingsPage() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Platform Settings Tab */}
+            {activeTab === 'platform' && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader 
+                    title="Platform Connection" 
+                    description="Configure your AI Execution Platform API connection"
+                  />
+                  <CardContent>
+                    <div className="space-y-6">
+                      {/* Connection Status */}
+                      <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                        <ConnectionStatusIndicator />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {isConfigured ? 'Platform Configured' : 'Not Configured'}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {lastConnectionTime 
+                              ? `Last checked ${formatRelativeTime(lastConnectionTime)}${lastLatency ? ` • ${lastLatency}ms` : ''}`
+                              : 'Connection not tested yet'
+                            }
+                          </p>
+                        </div>
+                        {lastConnectionStatus === 'success' && (
+                          <Badge variant="success" size="sm">Connected</Badge>
+                        )}
+                        {lastConnectionStatus === 'failed' && (
+                          <Badge variant="error" size="sm">Failed</Badge>
+                        )}
+                      </div>
+
+                      {/* Base URL Input */}
+                      <Input
+                        label="Platform Base URL"
+                        placeholder="https://api.platform.example.com"
+                        value={inputBaseUrl}
+                        onChange={(e) => handleBaseUrlChange(e.target.value)}
+                        error={baseUrlError}
+                        hint="The base URL of your AI Execution Platform API"
+                        leftIcon={<Globe className="w-4 h-4" />}
+                      />
+
+                      {/* API Key Input */}
+                      <Input
+                        label="API Key"
+                        placeholder="Enter your API key"
+                        type="password"
+                        value={inputApiKey}
+                        onChange={(e) => handleApiKeyChange(e.target.value)}
+                        error={apiKeyError}
+                        hint="Your x-api-key credential for authentication"
+                        leftIcon={<Lock className="w-4 h-4" />}
+                      />
+
+                      {/* Test Connection Button */}
+                      <div className="flex items-center gap-3 pt-2">
+                        <Button
+                          variant="primary"
+                          onClick={handleTestConnection}
+                          disabled={isConnecting || testConnectionMutation.isPending}
+                          leftIcon={
+                            isConnecting || testConnectionMutation.isPending 
+                              ? <RefreshCw className="w-4 h-4 animate-spin" />
+                              : <Wifi className="w-4 h-4" />
+                          }
+                        >
+                          {isConnecting || testConnectionMutation.isPending 
+                            ? 'Testing Connection...' 
+                            : 'Test Connection'
+                          }
+                        </Button>
+                        
+                        {testConnectionMutation.isError && (
+                          <div className="flex-1 text-sm text-red-600 dark:text-red-400">
+                            {getErrorKind(null)}: {getErrorAction(null)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Error Display */}
+                      {testConnectionMutation.isError && (
+                        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                                Connection Failed
+                              </p>
+                              <p className="text-sm text-red-600 dark:text-red-300 mt-1">
+                                {getErrorAction(null)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Success Display */}
+                      {lastConnectionStatus === 'success' && (
+                        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <Check className="w-5 h-5 text-emerald-500 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                                Connection Successful
+                              </p>
+                              <p className="text-sm text-emerald-600 dark:text-emerald-300 mt-1">
+                                Platform is reachable and responding correctly
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader 
+                    title="Request Tracing" 
+                    description="Debug API requests with correlation IDs"
+                  />
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        All API requests include an <code>x-request-id</code> header for debugging and correlation.
+                        Use this ID when contacting support or reviewing server logs.
+                      </p>
+                      <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg font-mono text-sm">
+                        <span className="text-slate-500">x-request-id: </span>
+                        <span className="text-primary-600 dark:text-primary-400">
+                          [UUID generated per request]
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {/* API Keys Tab */}
