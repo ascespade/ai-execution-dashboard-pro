@@ -86,6 +86,7 @@ export const useUIStore = create<UIState>((set) => ({
       })),
       unreadCount: 0,
     })),
+  clearNotifications: () => set({ notifications: [], unreadCount: 0 }),
   setNotificationsOpen: (open: boolean) => set({ notificationsOpen: open }),
 
   // Modals

@@ -229,21 +229,21 @@ export default function CreateOrchestrationPage() {
                   label="Mode"
                   options={ORCHESTRATION_MODES}
                   value={formData.mode}
-                  onChange={(value) => setFormData({ ...formData, mode: value })}
+                  onChange={(value) => setFormData({ ...formData, mode: Array.isArray(value) ? value[0] : value })}
                 />
 
                 <Select
                   label="Task Size"
                   options={TASK_SIZES}
                   value={formData.taskSize}
-                  onChange={(value) => setFormData({ ...formData, taskSize: value })}
+                  onChange={(value) => setFormData({ ...formData, taskSize: Array.isArray(value) ? value[0] : value })}
                 />
 
                 <Select
                   label="Priority"
                   options={PRIORITIES}
                   value={formData.priority}
-                  onChange={(value) => setFormData({ ...formData, priority: value })}
+                  onChange={(value) => setFormData({ ...formData, priority: Array.isArray(value) ? value[0] : value })}
                 />
 
                 <Input

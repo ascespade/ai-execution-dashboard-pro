@@ -11,7 +11,7 @@ export interface SelectOption {
   icon?: React.ReactNode;
 }
 
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
   label?: string;
   error?: string;
   hint?: string;
@@ -45,7 +45,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [selected, setSelected] = useState<string | string[]>(
-      props.value || (isMulti ? [] : '')
+      (props.value as string | string[]) || (isMulti ? [] : '')
     );
     const wrapperRef = useRef<HTMLDivElement>(null);
     const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');

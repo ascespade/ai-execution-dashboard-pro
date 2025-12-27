@@ -4,7 +4,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
 
-interface EmptyStateProps {
+export interface EmptyStateProps {
   icon?: React.ReactNode;
   title: string;
   description?: string;

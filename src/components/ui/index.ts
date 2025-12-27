@@ -22,3 +22,6 @@ export type { ToggleProps } from './Toggle';
 
 export { Spinner, LoadingOverlay } from './Spinner';
 export type { SpinnerProps, LoadingOverlayProps } from './Spinner';
+
+export { Textarea } from './Textarea';
+export type { TextareaProps } from './Textarea';

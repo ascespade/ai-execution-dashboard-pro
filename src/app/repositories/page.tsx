@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardContent, Button, Input, Badge, Modal, ConfirmModal } from '@/components/ui';
 import { Plus, Search, MoreVertical, Link2, GitBranch, Shield, Code2, Settings } from 'lucide-react';
 import { cn, formatRelativeTime } from '@/lib/utils';

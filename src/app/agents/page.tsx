@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardContent, Button, Badge, StatusBadge, Input } from '@/components/ui';
 import { Search, Plus, MoreVertical, Cpu, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { cn, formatRelativeTime } from '@/lib/utils';

@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
 
-interface ModalProps {
+export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
@@ -116,7 +116,7 @@ export const Modal: React.FC<ModalProps> = ({
 };
 
 // Confirm Modal Component
-interface ConfirmModalProps {
+export interface ConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;

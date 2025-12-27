@@ -13,7 +13,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn, formatRelativeTime } from '@/lib/utils';
-import { Card, CardHeader, StatusBadge, Button } from '@/components/ui';
+import { Card, CardHeader, CardContent, StatusBadge, Button } from '@/components/ui';
 import type { OrchestrationSummary } from '@/types';
 
 interface RecentActivityProps {

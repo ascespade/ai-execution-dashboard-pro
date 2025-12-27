@@ -9,6 +9,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  iconOnly?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -20,6 +21,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       isLoading = false,
       leftIcon,
       rightIcon,
+      iconOnly = false,
       disabled,
       children,
       ...props
@@ -37,9 +39,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const sizes = {
-      sm: 'px-3 py-1.5 text-sm gap-1.5',
-      md: 'px-4 py-2 text-sm gap-2',
-      lg: 'px-6 py-3 text-base gap-2',
+      sm: iconOnly ? 'p-1.5' : 'px-3 py-1.5 text-sm gap-1.5',
+      md: iconOnly ? 'p-2' : 'px-4 py-2 text-sm gap-2',
+      lg: iconOnly ? 'p-3' : 'px-6 py-3 text-base gap-2',
     };
 
     return (

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardContent, Button, Input, Badge, Modal, ConfirmModal } from '@/components/ui';
 import { Plus, Search, MoreVertical, FileCode, Copy, Edit, Trash2, Eye } from 'lucide-react';
 import { cn, formatRelativeTime } from '@/lib/utils';

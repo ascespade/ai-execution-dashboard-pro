@@ -3,7 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface SpinnerProps {
+export interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -40,7 +40,7 @@ export const Spinner: React.FC<SpinnerProps> = ({ size = 'md', className }) => {
 };
 
 // Loading Overlay Component
-interface LoadingOverlayProps {
+export interface LoadingOverlayProps {
   isLoading: boolean;
   children: React.ReactNode;
   message?: string;

@@ -6,28 +6,69 @@ import { DashboardLayout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input, Badge, StatusBadge, Select } from '@/components/ui';
 import { Plus, Search, Filter, MoreVertical, Play, Pause, Trash2, Eye } from 'lucide-react';
 import { cn, formatRelativeTime } from '@/lib/utils';
-import { mockOrchestrations } from '@/lib/mock-data';
-import type { OrchestrationSummary, Status } from '@/types';
+import { useOrchestrations } from '@/platform/adapter/hooks/usePlatform';
 
 export default function OrchestrationsPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<Status | ''>('');
-  const orchestrations = mockOrchestrations;
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const { data: orchestrationsData, isLoading, error } = useOrchestrations();
+
+  const orchestrations = orchestrationsData?.orchestrations || [];
 
   const filteredOrchestrations = orchestrations.filter((orch) => {
     const matchesSearch = orch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      orch.repository_url.toLowerCase().includes(searchQuery.toLowerCase());
+      orch.repositoryUrl.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = !statusFilter || orch.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const statusCounts = {
     all: orchestrations.length,
-    running: orchestrations.filter(o => o.status === 'RUNNING').length,
-    completed: orchestrations.filter(o => o.status === 'COMPLETED').length,
-    failed: orchestrations.filter(o => o.status === 'FAILED').length,
-    pending: orchestrations.filter(o => o.status === 'PENDING').length,
+    running: orchestrations.filter(o => o.status === 'running').length,
+    completed: orchestrations.filter(o => o.status === 'completed').length,
+    failed: orchestrations.filter(o => o.status === 'failed').length,
+    pending: orchestrations.filter(o => o.status === 'pending').length,
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Orchestrations</h1>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">Loading orchestrations...</p>
+            </div>
+          </div>
+          <Card padding="sm">
+            <div className="text-center py-8">
+              <p className="text-slate-500 dark:text-slate-400">Loading orchestrations from platform...</p>
+            </div>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Orchestrations</h1>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">Error loading orchestrations</p>
+            </div>
+          </div>
+          <Card padding="sm">
+            <div className="text-center py-8">
+              <p className="text-red-500 dark:text-red-400">Failed to load orchestrations. Please check your connection and try again.</p>
+            </div>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -64,13 +105,13 @@ export default function OrchestrationsPage() {
               <Select
                 options={[
                   { value: '', label: 'All Status' },
-                  { value: 'RUNNING', label: 'Running' },
-                  { value: 'COMPLETED', label: 'Completed' },
-                  { value: 'FAILED', label: 'Failed' },
-                  { value: 'PENDING', label: 'Pending' },
+                  { value: 'running', label: 'Running' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'failed', label: 'Failed' },
+                  { value: 'pending', label: 'Pending' },
                 ]}
                 value={statusFilter}
-                onChange={(value) => setStatusFilter(value as Status | '')}
+                onChange={(value) => setStatusFilter(Array.isArray(value) ? value[0] || '' : value)}
                 placeholder="Filter by status"
               />
             </div>
@@ -82,10 +123,10 @@ export default function OrchestrationsPage() {
           {(['all', 'running', 'completed', 'failed', 'pending'] as const).map((status) => (
             <button
               key={status}
-              onClick={() => setStatusFilter(status === 'all' ? '' : status.toUpperCase() as Status)}
+              onClick={() => setStatusFilter(status === 'all' ? '' : status)}
               className={cn(
                 'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                (!statusFilter && status === 'all') || statusFilter === status.toUpperCase()
+                (!statusFilter && status === 'all') || statusFilter === status
                   ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
               )}
@@ -140,11 +181,11 @@ export default function OrchestrationsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-xs block">
-                        {orch.repository_url}
+                        {orch.repositoryUrl}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <StatusBadge status={orch.status} />
+                      <StatusBadge status={orch.status.toUpperCase()} />
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -152,10 +193,10 @@ export default function OrchestrationsPage() {
                           <div
                             className={cn(
                               'h-full rounded-full transition-all',
-                              orch.status === 'COMPLETED' && 'bg-emerald-500',
-                              orch.status === 'RUNNING' && 'bg-blue-500',
-                              orch.status === 'FAILED' && 'bg-red-500',
-                              orch.status === 'PENDING' && 'bg-amber-500'
+                              orch.status === 'completed' && 'bg-emerald-500',
+                              orch.status === 'running' && 'bg-blue-500',
+                              orch.status === 'failed' && 'bg-red-500',
+                              orch.status === 'pending' && 'bg-amber-500'
                             )}
                             style={{ width: `${orch.progress}%` }}
                           />
@@ -165,7 +206,7 @@ export default function OrchestrationsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-slate-500 dark:text-slate-400">
-                        {formatRelativeTime(orch.created_at)}
+                        {formatRelativeTime(orch.createdAt)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -175,12 +216,12 @@ export default function OrchestrationsPage() {
                             <Eye className="w-4 h-4" />
                           </Button>
                         </Link>
-                        {orch.status === 'RUNNING' && (
+                        {orch.status === 'running' && (
                           <Button variant="ghost" size="sm" iconOnly>
                             <Pause className="w-4 h-4" />
                           </Button>
                         )}
-                        {orch.status === 'PENDING' && (
+                        {orch.status === 'pending' && (
                           <Button variant="ghost" size="sm" iconOnly>
                             <Play className="w-4 h-4" />
                           </Button>

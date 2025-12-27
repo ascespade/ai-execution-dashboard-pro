@@ -91,7 +91,7 @@ export const mockAgents = [
     name: 'docs-agent',
     display_name: 'Documentation Agent',
     category: 'documentation' as const,
-    status: 'available' as const,
+    status: 'offline' as const,
   },
 ];
 

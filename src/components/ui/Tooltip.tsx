@@ -3,7 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface TooltipProps {
+export interface TooltipProps {
   content: string;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
